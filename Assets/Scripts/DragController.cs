@@ -1,76 +1,76 @@
 using UnityEngine;
 
-public class DragController : MonoBehaviour
+public class DragController
 {
-    [SerializeField] private Camera _camera;
-    [SerializeField] private float _maxRayDistance = 100f;
+    private readonly float _maxRayDistance;
 
     private IDraggable _selectedObject;
+    private Transform _selectedTransform;
 
-    private Vector3 _grabOffset;
+    private Vector3 _grabOffsetXZ;
+    private float _selectedY;
 
-    private void Update()
+    public DragController(float maxRayDistance)
     {
-        HandleMouseInput();
+        _maxRayDistance = maxRayDistance;
     }
 
-    private void HandleMouseInput()
+    public void StartDrag(Ray ray)
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, _maxRayDistance) == false)
         {
-            TryStartDrag();
+            return;
         }
 
-        if (Input.GetMouseButton(0))
+        IDraggable draggable = hitInfo.collider.GetComponent<IDraggable>();
+
+        if (draggable == null)
         {
-            ContinueDrag();
+            return;
         }
 
-        if (Input.GetMouseButtonUp(0))
-        {
-            StopDrag();
-        }
+        _selectedObject = draggable;
+        _selectedTransform = hitInfo.collider.transform;
+        
+        _selectedY = _selectedTransform.position.y;
+        
+        Vector3 objectPos = _selectedTransform.position;
+
+        Vector3 hitPosOnSameY = new Vector3(
+            hitInfo.point.x,
+            objectPos.y,
+            hitInfo.point.z);
+
+        _grabOffsetXZ = objectPos - hitPosOnSameY;
     }
 
-    private void TryStartDrag()
+    public void ContinueDrag(Ray ray)
     {
-        Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
-
-        if (Physics.Raycast(ray, out RaycastHit hitInfo, _maxRayDistance))
+        if (_selectedObject == null || _selectedTransform == null)
         {
-            IDraggable draggable = hitInfo.collider.gameObject.GetComponent<IDraggable>();
-
-            if (draggable != null)
-            {
-                _selectedObject = draggable;
-                Vector3 objectPosition = hitInfo.collider.transform.position;
-                _grabOffset = objectPosition - hitInfo.point;
-            }
+            return;
         }
-    }
 
-    private void ContinueDrag()
-    {
-        if (_selectedObject == null)
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, _maxRayDistance) == false)
         {
             return;
         }
         
-        Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+        Vector3 hitPoint = hitInfo.point;
+        
+        Vector3 targetPosition = new Vector3(
+            hitPoint.x,
+            _selectedY,
+            hitPoint.z);
+        
+        targetPosition += _grabOffsetXZ;
 
-        if (Physics.Raycast(ray, out RaycastHit hitInfo, _maxRayDistance))
-        {
-            Vector3 hitPoint = hitInfo.point;
-            
-            Vector3 targetPosition = hitInfo.point + _grabOffset;
-            
-            _selectedObject.MoveTo(targetPosition);
-        }
+        _selectedObject.MoveTo(targetPosition);
     }
 
-    private void StopDrag()
+    public void StopDrag()
     {
         _selectedObject = null;
+        _selectedTransform = null;
     }
 }
-    
