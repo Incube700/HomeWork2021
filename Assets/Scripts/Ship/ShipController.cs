@@ -22,9 +22,7 @@ public class ShipController : MonoBehaviour
     {
         HandleShipRotation();
         HandleSailRotation();
-
         UpdateSpeedFromWind();
-
         MoveShip();
     }
 
@@ -43,7 +41,7 @@ public class ShipController : MonoBehaviour
         }
 
         float deltaAngle = turnInput * _turnSpeedDegreesPerSecond * Time.deltaTime;
-
+        
         _shipTransform.Rotate(0f, deltaAngle, 0f);
     }
 
@@ -63,10 +61,7 @@ public class ShipController : MonoBehaviour
 
         _currentSailAngle += sailInput * _sailRotateSpeedDegreesPerSecond * Time.deltaTime;
 
-        _currentSailAngle = Mathf.Clamp(
-            _currentSailAngle,
-            -_maxSailAngleDegrees,
-            _maxSailAngleDegrees);
+        _currentSailAngle = Mathf.Clamp(_currentSailAngle, -_maxSailAngleDegrees, _maxSailAngleDegrees);
         
         Quaternion shipRotation = _shipTransform.rotation;
         Quaternion sailRotation = shipRotation * Quaternion.Euler(0f, _currentSailAngle, 0f);
